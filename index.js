@@ -1,14 +1,17 @@
 const { ApolloServer, gql } = require('apollo-server');
 const MongoClient = require('mongodb').MongoClient;
+const mongoose = require('mongoose');
+const Event = require('./model/model');
 
 
 
-const url = `mongodb+srv://sagar:SoYKGk9X4eCm5MTn@cluster0.9jrrq.mongodb.net/MONGO_DB?retryWrites=true&w=majority`;
-const client = new MongoClient(url, { useNewUrlParser: true, useUnifiedTopology: true });
-client.connect(function (err) {
-  console.log("MONGOdb connected");
-  db = client.db("MONGO_DB"); //mongodb database name
-});
+// const url = `mongodb+srv://sagar:SoYKGk9X4eCm5MTn@cluster0.9jrrq.mongodb.net/MONGO_DB?retryWrites=true&w=majority`;
+// const client = new MongoClient(url, { useNewUrlParser: true, useUnifiedTopology: true });
+// client.connect(function (err) {
+//   console.log("MONGOdb connected");   
+//   db = client.db("MONGO_DB"); //mongodb database name
+// });
+
 
 // A schema is a collection of type definitions (hence "typeDefs")
 // that together define the "shape" of queries that are executed against
@@ -20,7 +23,7 @@ const typeDefs = gql`
 
   type Query {
     event: [event],
-    events(_id: ID!): event
+    events(_id: ID!): [event]
   }
 
   type event {
@@ -53,11 +56,14 @@ const typeDefs = gql`
 const resolvers = {
   Query: {
     event: async () => {
-        values = await db.collection('events').find().toArray().then(res => { return res });
+        values = await Event.find().then(res => { 
+          return res });
         return values
       },
       async events(parent, args, context, info) { 
-        values = await db.collection('events').findOne({ _id: args._id }).then(res => {
+       
+        console.log(args._id)
+        values = await Event.find({_id:args._id}).then(res => {
             return res
         });
         return values
@@ -69,6 +75,12 @@ const resolvers = {
 const server = new ApolloServer({ typeDefs, resolvers });
 
 // The `listen` method launches a web server.
-server.listen().then(({ url }) => {
-  console.log(`🚀  Server ready at ${url}`);
-});
+mongoose.connect(`mongodb+srv://sagar:SoYKGk9X4eCm5MTn@cluster0.9jrrq.mongodb.net/MONGO_DB?retryWrites=true&w=majority`
+    ).then(() => {
+      server.listen().then(({ url }) => {
+        console.log(`🚀  Server ready at ${url}`);
+      });
+
+    }).catch(err => {
+        console.log(err);
+    });
